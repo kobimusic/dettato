@@ -2,6 +2,9 @@ import { api } from "../../scripts/api.js";
 import { app } from "../../scripts/app.js";
 
 const downloadLists = new WeakMap();
+const rowHeight = 28;
+const rowGap = 4;
+const widgetMargin = 4;
 
 app.registerExtension({
     name: "Dettato.MidiDownloads",
@@ -19,14 +22,20 @@ app.registerExtension({
                 Object.assign(list.style, {
                     display: "grid",
                     alignContent: "start",
-                    gap: "4px",
-                    overflow: "auto",
+                    gridTemplateColumns: "minmax(0, 1fr)",
+                    gridAutoRows: `${rowHeight}px`,
+                    gap: `${rowGap}px`,
+                    overflowY: "auto",
+                    boxSizing: "border-box",
+                    padding: `${rowGap / 2}px 0`,
                     fontSize: "12px",
                 });
                 downloadLists.set(this, list);
-                const height = () => Math.min(24 * list.childElementCount + 4, 148);
+                // ComfyUI subtracts both margins from the space available to the rows.
+                const height = () => Math.min(list.childElementCount, 5) * (rowHeight + rowGap) + 2 * widgetMargin;
                 this.addDOMWidget("midi_downloads", "midi_downloads", list, {
                     serialize: false,
+                    margin: widgetMargin,
                     getMinHeight: height,
                     getMaxHeight: height,
                     getHeight: height,
@@ -39,11 +48,19 @@ app.registerExtension({
                 link.href = api.apiURL(`/view?${params}`);
                 link.download = filename;
                 link.textContent = `Download ${filename}`;
-                link.style.color = "var(--input-text, #ddd)";
+                link.title = link.textContent;
+                Object.assign(link.style, {
+                    lineHeight: `${rowHeight}px`,
+                    padding: "0 6px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: "var(--input-text, #ddd)",
+                });
                 return link;
             });
             list.replaceChildren(...links);
-            this.setSize([this.size[0], Math.max(this.size[1], this.computeSize()[1])]);
+            this.setSize([Math.max(this.size[0], 300), Math.max(this.size[1], this.computeSize()[1])]);
             this.setDirtyCanvas(true, true);
         };
     },
