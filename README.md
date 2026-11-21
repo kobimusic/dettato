@@ -114,6 +114,24 @@ for path in paths:
 Each stage can also be used on its own (`dettato.transcriber`, `dettato.evidence`, `dettato.grouper`, `dettato.drums`). The model
 cards show how.
 
+### ComfyUI
+
+Clone the repo into `ComfyUI/custom_nodes/ComfyUI-Dettato`. From the clone, install it with the Python interpreter that runs ComfyUI.
+
+```bash
+python -m pip install -e .
+```
+
+For ComfyUI Portable on Windows, use its `python_embeded\python.exe` in place of `python`. Restart ComfyUI after installing.
+
+Connect **Load Audio → Dettato Transcribe → Save MIDI (Dettato)**. Any node with an `AUDIO` output can feed the transcriber.
+The save node writes one numbered `.mid` per clip under ComfyUI's `output/Dettato/` by default and returns its relative path.
+The transcriber also provides a JSON summary with instrument names and note counts.
+
+`auto` uses ComfyUI's CUDA device when selected and otherwise uses CPU. You can also explicitly select `cpu`.
+Weights download on the first run and are cached on disk. The models stay loaded while the node processes its audio batch.
+Dettato uses the incoming sample rate and skips drum transcription below 40 kHz.
+
 ### Weights offline
 
 Set `DETTATO_WEIGHTS` to a folder holding the four model repos (`dettato/`, `dettato-evidence/`, `dettato-grouper/`,
