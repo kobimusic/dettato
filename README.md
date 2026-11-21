@@ -116,16 +116,12 @@ cards show how.
 
 ### ComfyUI
 
-Clone the repo into `ComfyUI/custom_nodes/ComfyUI-Dettato`. From the clone, install it with the Python interpreter that runs ComfyUI.
-
-```bash
-python -m pip install -e .
-```
-
-For ComfyUI Portable on Windows, use its `python_embeded\python.exe` in place of `python`. Restart ComfyUI after installing.
+Clone the repo into `ComfyUI/custom_nodes/ComfyUI-Dettato` and restart ComfyUI. The nodes load Dettato from the checkout
+and use ComfyUI's Python environment. No additional `pip` install is required.
 
 Connect **Load Audio → Dettato Transcribe → Save MIDI (Dettato)**. Any node with an `AUDIO` output can feed the transcriber.
-The save node writes one numbered `.mid` per clip under ComfyUI's `output/Dettato/` by default and returns its relative path.
+The save node writes one numbered `.mid` per clip under ComfyUI's `output/Dettato/` by default, shows a download link for
+each file, and returns its relative path.
 The transcriber also provides a JSON summary with instrument names and note counts.
 
 `auto` uses ComfyUI's CUDA device when selected and otherwise uses CPU. You can also explicitly select `cpu`.

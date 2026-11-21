@@ -13,6 +13,8 @@ from __future__ import annotations
 import numpy as np
 import torch
 
+from ..audio import resample
+
 SR = 44100
 FLOOR = 1e-5
 N_LO, N_HI, N_CQ = 128, 32, 120
@@ -88,11 +90,9 @@ def level_gain(x: np.ndarray) -> float:
 
 def features(x44: np.ndarray) -> np.ndarray:
     """Mono audio at 44.1 kHz -> (T, 280) float16 features [lo | hi | cq] at 100 frames per second."""
-    import soxr
-
     x44 = np.asarray(x44, np.float32)
     x = (x44 * level_gain(x44)).astype(np.float32)
-    x16 = soxr.resample(x, SR, 16000).astype(np.float32)
+    x16 = resample(x, SR, 16000)
     lo = _logspec(x16, 512, 160, _filters("lo"))
     hi = _logspec(x, 1411, SR // 100, _filters("hi"))
     cq = _logspec(x16, CQ_NFFT, 160, _filters("cq"))

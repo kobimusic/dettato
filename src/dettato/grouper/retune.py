@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from ..audio import resample as resample_audio
+
 SR = 16000
 MIN_CENTS = 10.0          # retune only when the estimate is at least this far from A440 ...
 MIN_STRENGTH = 0.12       # ... and the estimate is consistent enough (resultant length of the circular mean)
@@ -61,6 +63,4 @@ def ratio(y):
 
 def resample(y, r):
     """Play the audio r times faster (pitch x r): 16 kHz -> 16 kHz / r samples."""
-    import soxr
-
-    return soxr.resample(y, SR, SR / r, quality="HQ").astype(np.float32)
+    return resample_audio(y, SR, SR / r)

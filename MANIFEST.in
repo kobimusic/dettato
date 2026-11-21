@@ -1,4 +1,5 @@
 include CITATION.cff
 include __init__.py dettato_comfyui_nodes.py
+include web/dettato_midi.js
 graft tests
 global-exclude __pycache__ *.py[cod]

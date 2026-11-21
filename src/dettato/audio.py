@@ -7,10 +7,28 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
+from fractions import Fraction
 
 import numpy as np
 
 EXTENSIONS = (".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aiff", ".aif", ".opus")
+
+
+def resample(samples: np.ndarray, source_rate: int, target_rate: float) -> np.ndarray:
+    if source_rate == target_rate or len(samples) == 0:
+        return samples
+    try:
+        import soxr
+    except ModuleNotFoundError as exc:
+        if exc.name != "soxr":
+            raise
+        from scipy.signal import resample_poly
+
+        ratio = Fraction(target_rate / source_rate).limit_denominator(10_000)
+        length = round(len(samples) * target_rate / source_rate)
+        output = resample_poly(samples, ratio.numerator, ratio.denominator)
+        return output[:length].astype(np.float32, copy=False)
+    return soxr.resample(samples, source_rate, target_rate, quality="HQ").astype(np.float32)
 
 
 @dataclass
@@ -24,11 +42,7 @@ class Audio:
 
     def at(self, rate: int) -> np.ndarray:
         """The audio resampled to ``rate`` (float32 mono)."""
-        if rate == self.rate:
-            return self.samples
-        import soxr
-
-        return soxr.resample(self.samples, self.rate, rate, quality="HQ").astype(np.float32)
+        return resample(self.samples, self.rate, rate)
 
 
 def _ffmpeg(path: str) -> Audio:

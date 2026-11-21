@@ -28,7 +28,7 @@ class DettatoTranscribe:
         import torch
         from comfy import model_management
         from comfy.utils import ProgressBar
-        from dettato import Dettato
+        from .src.dettato import Dettato
 
         waveform = audio["waveform"]
         sample_rate = int(audio["sample_rate"])
@@ -83,7 +83,7 @@ class DettatoSaveMIDI:
 
         # Encode before creating the destination and reserve each numbered name exclusively.
         midi = BytesIO()
-        transcription.to_midi().write(midi)
+        transcription.write_midi(midi)
         while True:
             filename = f"{stem}_{counter:05d}.mid"
             path = folder / filename
@@ -99,7 +99,11 @@ class DettatoSaveMIDI:
             except OSError:
                 path.unlink(missing_ok=True)
                 raise
-            return ((Path(subfolder) / filename).as_posix(),)
+            midi_path = (Path(subfolder) / filename).as_posix()
+            return {
+                "ui": {"midi": [{"filename": filename, "subfolder": subfolder, "type": "output"}]},
+                "result": (midi_path,),
+            }
 
 
 NODE_CLASS_MAPPINGS = {

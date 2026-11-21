@@ -58,6 +58,19 @@ class Transcription:
             pm.instruments.append(ins)
         return pm
 
+    def write_midi(self, stream):
+        """Write MIDI to a binary stream, including in environments without pretty_midi."""
+        try:
+            midi = self.to_midi()
+        except ModuleNotFoundError as exc:
+            if exc.name != "pretty_midi":
+                raise
+            from .midi import write_midi
+
+            write_midi(stream, self.tracks)
+        else:
+            midi.write(stream)
+
     def save_midi(self, path: str):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         self.to_midi().write(path)

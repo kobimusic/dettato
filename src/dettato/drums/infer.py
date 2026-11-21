@@ -21,6 +21,7 @@ import numpy as np
 import torch
 
 from .. import hub
+from ..audio import resample
 from .features import SR, features
 from .model import KEYS, TIMPANI_KEYS, DrumNet, OrchestralExpert
 
@@ -128,10 +129,7 @@ class DrumTranscriber:
         """Mono audio (from a source recorded at >= 40 kHz) -> drum hits sorted by onset. Audio at another rate than 44.1 kHz is
         resampled first."""
         x = np.asarray(audio, np.float32)
-        if sr != SR:
-            import soxr
-
-            x = soxr.resample(x, sr, SR, quality="HQ").astype(np.float32)
+        x = resample(x, sr, SR)
         if len(x) < SR // 10:
             self.last_info = {"router": None, "model": None}
             return []
