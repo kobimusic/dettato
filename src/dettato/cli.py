@@ -31,7 +31,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="dettato", description="Audio to multi-track MIDI.")
     ap.add_argument("inputs", nargs="+", help="audio files or folders")
     ap.add_argument("-o", "--out", default="dettato_out", help="output folder (default: dettato_out)")
-    ap.add_argument("--device", default=None, help="cuda, cpu, cuda:1, ... (default: cuda if available)")
+    ap.add_argument("--device", default=None, help="cuda, mps, cpu, cuda:1, ... (default: cuda if available, else mps, else cpu)")
     a = ap.parse_args(argv)
     songs = gather(a.inputs)
     if not songs:

@@ -1,6 +1,7 @@
 """CPU smoke test of the grouper stage (skipped when the weights cannot be loaded)."""
 import numpy as np
 import pytest
+import torch
 
 from dettato.grouper import INSTRUMENTS, PROGRAM, Grouper
 from dettato.grouper import decode as GD
@@ -97,3 +98,20 @@ def test_group_from_a_shared_pass_equals_group(stages):
     assert [tr["instrument"] for tr in tracks] == [tr["instrument"] for tr in ref_tracks]
     for a, b in zip(tracks, ref_tracks):
         assert np.array_equal(a["notes"], b["notes"])
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="no MPS device")
+def test_group_on_mps_takes_float64_notes(stages):
+    """MPS (Apple's Metal) has no float64: the notes the pipeline passes as float64 are moved there as float32."""
+    g, t = stages
+    try:
+        from dettato.transcriber import Transcriber
+
+        gm, tm = Grouper.from_pretrained("mps"), Transcriber.from_pretrained("mps")
+    except Exception as e:  # noqa: BLE001
+        pytest.skip(f"grouper / transcriber weights not available: {e!r}")
+    notes = np.array([[0.0, 2.0, 45], [2.0, 4.0, 43], [0.5, 1.5, 81], [2.5, 3.5, 83]], np.float64)
+    tracks, info = gm.group(tones(), notes, tm)
+    ref_tracks, ref_info = g.group(tones(), notes, t)
+    assert info["notes_out"] == ref_info["notes_out"]
+    assert sorted(int(p) for tr in tracks for p in tr["notes"][:, 2]) == sorted(int(p) for tr in ref_tracks for p in tr["notes"][:, 2])

@@ -28,7 +28,11 @@ HOST_BUF_AFTER_S = MAX_S_1PASS   # above this length the transcriber's tap buffe
 
 
 def default_device() -> str:
-    return "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
 
 
 @dataclass

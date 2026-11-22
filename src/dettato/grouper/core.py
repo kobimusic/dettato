@@ -70,6 +70,11 @@ def assign_slots(notes, tnotes):
     return np.stack([ov[o, 0], np.maximum(ov[o, 1], ov[o, 0] + 0.02), ov[o, 2], slot[o]], 1)
 
 
+def _float_for(dev) -> type:
+    """float64 where the device has it; MPS (Apple's Metal) has no float64."""
+    return np.float32 if torch.device(dev).type == "mps" else np.float64
+
+
 @torch.no_grad()
 def gather(P, H, S, notes, hop):
     """Maps P {head: (T, 88)}, hidden state H and stem output S (T, 88, C; on the device or in host memory) at the notes (N, 4) ->
@@ -82,7 +87,7 @@ def gather(P, H, S, notes, hop):
     Cc = H.shape[2]
     if N == 0:
         return np.zeros((0, 12), np.float32), np.zeros((0, 3, Cc), np.int8), np.zeros((0, 3), np.float16)
-    nt = torch.from_numpy(notes).to(dev)
+    nt = torch.from_numpy(np.asarray(notes, _float_for(dev))).to(dev)
     lane = (nt[:, 2].round().long() - PITCH_LO).clamp(0, L - 1)
     t0 = (nt[:, 0] / hop).round().long().clamp(0, T - 1)
     te = torch.maximum((nt[:, 1] / hop).ceil().long(), t0 + 1).clamp(max=T)
