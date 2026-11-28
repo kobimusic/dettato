@@ -10,7 +10,7 @@ import os
 import sys
 import time
 
-from .audio import EXTENSIONS
+from .audio import EXTENSIONS, AudioError
 
 
 def gather(inputs):
@@ -33,6 +33,9 @@ def main(argv=None):
     ap.add_argument("-o", "--out", default="dettato_out", help="output folder (default: dettato_out)")
     ap.add_argument("--device", default=None, help="cuda, mps, cpu, cuda:1, ... (default: cuda if available, else mps, else cpu)")
     a = ap.parse_args(argv)
+    missing = [p for p in a.inputs if not os.path.exists(p)]
+    if missing:                                         # before the models load, so a mistyped path costs nothing
+        sys.exit("dettato: no such file or folder: " + ", ".join(missing))
     songs = gather(a.inputs)
     if not songs:
         sys.exit("no audio files found")
@@ -45,6 +48,10 @@ def main(argv=None):
         t0 = time.time()
         try:
             res = model.transcribe(path)
+        except AudioError as e:                         # its message starts with the path and says why
+            failed += 1
+            print(f"FAILED {e}", flush=True)
+            continue
         except Exception as e:  # noqa: BLE001
             failed += 1
             print(f"FAILED {path}: {e!r}", flush=True)

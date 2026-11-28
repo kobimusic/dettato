@@ -5,12 +5,18 @@ source itself was recorded at 40 kHz or more.
 """
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 from dataclasses import dataclass
 
 import numpy as np
 
 EXTENSIONS = (".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aiff", ".aif", ".opus")
+
+
+class AudioError(RuntimeError):
+    """A file that could not be read as audio. The message starts with the path and says what soundfile and ffmpeg reported."""
 
 
 @dataclass
@@ -31,11 +37,18 @@ class Audio:
         return soxr.resample(self.samples, self.rate, rate, quality="HQ").astype(np.float32)
 
 
-def _ffmpeg(path: str) -> Audio:
+def _ffmpeg(path: str, why: Exception) -> Audio:
+    """Decode with ffmpeg. ``why`` is the error soundfile gave for this file; it goes into the message when ffmpeg fails too."""
+    if shutil.which("ffmpeg") is None:
+        raise AudioError(f"{path}: soundfile cannot read this file, and ffmpeg is not installed (or not on the PATH). "
+                         f"ffmpeg reads the formats soundfile cannot, such as m4a and aac.\n  soundfile: {why}")
     rate = _probe_rate(path) or 44100
-    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-f", "f32le", "-ac", "1", "-ar", str(rate), "-"],
-                         capture_output=True, check=True).stdout
-    return Audio(np.frombuffer(raw, np.float32).copy(), rate)
+    run = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-f", "f32le", "-ac", "1", "-ar", str(rate), "-"],
+                         capture_output=True)
+    if run.returncode:
+        said = run.stderr.decode(errors="replace").strip() or f"exit status {run.returncode}"
+        raise AudioError(f"{path}: not readable as audio\n  soundfile: {why}\n  ffmpeg: " + said.replace("\n", "\n          "))
+    return Audio(np.frombuffer(run.stdout, np.float32).copy(), rate)
 
 
 def _probe_rate(path: str) -> int | None:
@@ -48,11 +61,19 @@ def _probe_rate(path: str) -> int | None:
 
 
 def load(path: str) -> Audio:
-    """Any audio file -> mono float32 at its own sample rate (soundfile first, ffmpeg for anything it cannot read)."""
+    """Any audio file -> mono float32 at its own sample rate (soundfile first, ffmpeg for anything it cannot read).
+
+    Raises FileNotFoundError when there is no such file, and AudioError when neither reader can decode it."""
+    path = os.fspath(path)
+    if os.path.isdir(path):
+        raise IsADirectoryError(f"{path} is a folder, not an audio file")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"no such file: {path}")
     try:
         import soundfile as sf
 
         x, rate = sf.read(path, dtype="float32", always_2d=True)
         return Audio(x.mean(1).astype(np.float32), int(rate))
-    except Exception:  # noqa: BLE001
-        return _ffmpeg(path)
+    except Exception as e:  # noqa: BLE001
+        why = e
+    return _ffmpeg(path, why)
