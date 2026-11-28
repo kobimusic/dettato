@@ -6,5 +6,5 @@
 """
 from .pipeline import Dettato, Track, Transcription, transcribe
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __all__ = ["Dettato", "Track", "Transcription", "transcribe", "__version__"]

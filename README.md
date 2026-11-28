@@ -59,7 +59,7 @@ cards have the details. I have not scored the four models as one chain yet, the 
 ## Install
 
 ```bash
-pip install git+https://github.com/kobimusic/dettato
+pip install dettato
 dettato song.mp3 -o out/        # -> out/song.mid + out/song.json
 ```
 

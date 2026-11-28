@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dettato"
-version = "2.0.0"
+version = "2.0.1"
 description = "Multi-instrument audio-to-MIDI transcription: notes, instrument-named tracks and drums from any recording"
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "Apache-2.0"
